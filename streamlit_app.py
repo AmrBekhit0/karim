@@ -9,9 +9,11 @@ from matplotlib.lines import Line2D
 st.title("Pipe Defects Visualization")
 st.markdown("Upload an Excel file to visualize pipeline defects as colored rectangles.")
 
-# Upload Excel file
-uploaded_file = st.file_uploader("Choose Excel file", type="xlsx")
-
+try:
+    uploaded_file = st.file_uploader("Choose Excel file", type="xlsx")
+except Exception as e:
+    st.error(f"📛 حدث خطأ أثناء قراءة الملف: {e}")
+    
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
