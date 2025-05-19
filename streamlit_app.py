@@ -74,8 +74,8 @@ if uploaded_file is not None:
             y = row['Angle'] - height / 2
 
             color = color_map(row['Peak'])
-            color_rgb = tuple((np.array(color[:3]) * 255).astype(int))
-            color_hex = f"rgb{color_rgb}"
+            color_rgb = (int(color[0]*255), int(color[1]*255), int(color[2]*255))
+            color_hex = f"rgb({color_rgb[0]}, {color_rgb[1]}, {color_rgb[2]})"
 
             fig.add_shape(
                 type="rect",
