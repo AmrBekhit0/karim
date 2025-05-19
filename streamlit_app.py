@@ -16,7 +16,7 @@ except Exception as e:
     
 if uploaded_file is not None:
     try:
-        df = pd.read_excel(uploaded_file)
+        df = pd.read_excel(uploaded_file, engine="openpyxl")
 
         # Extract columns
         df['Distance'] = pd.to_numeric(df.iloc[:, 3], errors='coerce')
