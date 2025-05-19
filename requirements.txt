@@ -1,6 +1,6 @@
-streamlit
-bokeh
-pandas
 numpy==1.23.5
+bokeh
+streamlit
+pandas
 matplotlib
 openpyxl
