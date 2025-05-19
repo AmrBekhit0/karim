@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
-from streamlit_bokeh import st_bokeh_chart
-
 
 st.title("Pipe Defects Visualization (Bokeh)")
 st.markdown("Upload an Excel file to visualize pipeline defects as colored rectangles with interaction.")
@@ -88,7 +86,7 @@ if uploaded_file is not None:
 
         p.y_range.flipped = True
 
-        st_bokeh_chart(p, use_container_width=True)
+        st.bokeh_chart(p, use_container_width=True)
 
     except Exception as e:
         st.error(f"Error reading or processing file: {e}")
