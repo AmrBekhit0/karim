@@ -1,7 +1,6 @@
 streamlit
+bokeh==2.4.3
 pandas
 numpy
 matplotlib
 openpyxl
-bokeh
-st_bokeh_chart
