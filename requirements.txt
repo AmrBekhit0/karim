@@ -4,3 +4,4 @@ numpy
 matplotlib
 openpyxl
 bokeh
+st_bokeh_chart
