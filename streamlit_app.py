@@ -1,6 +1,3 @@
-pip install numpy==1.23.5
-pip install --upgrade bokeh
-
 import streamlit as st
 import pandas as pd
 import numpy as np
