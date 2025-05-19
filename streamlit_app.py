@@ -1,37 +1,32 @@
-# streamlit_app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-import plotly.express as px
+from bokeh.plotting import figure
+from bokeh.models import ColumnDataSource
 
-
-st.title("Pipe Defects Visualization")
-st.markdown("Upload an Excel file to visualize pipeline defects as colored rectangles.")
+st.title("Pipe Defects Visualization (Bokeh)")
+st.markdown("Upload an Excel file to visualize pipeline defects as colored rectangles with interaction.")
 
 try:
     uploaded_file = st.file_uploader("Choose Excel file", type="xlsx")
 except Exception as e:
-    st.error(f"📛 حدث خطأ أثناء قراءة الملف: {e}")
+    st.error(f"\U0001F6AB حدث خطأ أثناء قراءة الملف: {e}")
 
 if uploaded_file is not None:
     try:
-        df = pd.read_excel(uploaded_file, engine="openpyxl")
+        df = pd.read_excel(uploaded_file)
 
-        # Extract columns
+        # استخراج الأعمدة المهمة
         df['Distance'] = pd.to_numeric(df.iloc[:, 3], errors='coerce')
         df['Orientation'] = df.iloc[:, 9]
         df['Peak'] = pd.to_numeric(df.iloc[:, 5], errors='coerce')
 
-        # Length and Width columns
         length_col = next((col for col in df.columns if 'Length' in col), None)
         width_col = next((col for col in df.columns if 'Width' in col), None)
 
         df['Length'] = pd.to_numeric(df[length_col], errors='coerce') / 1000
         df['Width'] = pd.to_numeric(df[width_col], errors='coerce') / 1000
 
-        # Orientation to angle
         def time_to_deg(value):
             try:
                 h, m = map(int, str(value).strip().split(":"))
@@ -40,15 +35,22 @@ if uploaded_file is not None:
                 return np.nan
 
         df['Angle'] = df['Orientation'].apply(time_to_deg)
-        df = df.dropna(subset=['Distance', 'Angle', 'Peak', 'Length', 'Width'])
+        df.dropna(subset=['Distance', 'Angle', 'Peak', 'Length', 'Width'], inplace=True)
 
-        # Pipe specs
         pipe_diam_m = 12 * 0.0254
         pipe_circum = np.pi * pipe_diam_m
         df['Angle Span'] = (df['Width'] / pipe_circum) * 360
 
+        # Sliders for min and max distance
+        min_dist = float(df['Distance'].min())
+        max_dist = float(df['Distance'].max())
 
-        # Color mapping
+        user_min_dist = st.slider("Minimum Distance", min_value=min_dist, max_value=max_dist, value=min_dist)
+        user_max_dist = st.slider("Maximum Distance", min_value=min_dist, max_value=max_dist, value=max_dist)
+
+        df = df[(df['Distance'] >= user_min_dist) & (df['Distance'] <= user_max_dist)]
+
+        # Prepare color mapping
         def color_map(peak):
             if peak < 0.3:
                 return plt.cm.Blues(peak)
@@ -57,44 +59,34 @@ if uploaded_file is not None:
             else:
                 return plt.cm.Reds(min(peak, 1))
 
+        import matplotlib.pyplot as plt
+        colors = [f"#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}" 
+                  for r, g, b, _ in [color_map(p) for p in df['Peak']]]
 
-        # Plotting
-        fig = go.Figure()
+        df['y_center'] = df['Angle']
+        df['x_center'] = df['Distance']
 
-        # نحضّر بيانات الأعمدة (بار أفقي مائل يمثل المستطيلات)
-        df['y_start'] = df['Angle'] - df['Angle Span'] / 2
-        df['y_end'] = df['Angle'] + df['Angle Span'] / 2
+        source = ColumnDataSource(data=dict(
+            x=df['x_center'],
+            y=df['y_center'],
+            width=df['Length'],
+            height=df['Angle Span'],
+            color=colors,
+            peak=df['Peak'],
+        ))
 
-        # نستخدم scatter لإنشاء أشكال مستطيلية عبر rectangles
-        bars = go.Bar(
-            x=df['Length'],
-            y=df['Angle'],
-            orientation='h',
-            marker=dict(
-                color=[f"rgb({int(c[0]*255)},{int(c[1]*255)},{int(c[2]*255)})" for c in df['Peak'].apply(color_map)],
-                line=dict(width=0)
-            ),
-            width=df['Angle Span'],
-            hovertext=[
-                f"Distance: {d:.2f} m<br>Peak: {p:.2f}<br>Angle: {a:.1f}°"
-                for d, p, a in zip(df['Distance'], df['Peak'], df['Angle'])
-            ],
-            hoverinfo="text"
-        )
+        p = figure(title="Pipe Defects (Interactive - Bokeh)",
+                   x_axis_label="Distance (m)",
+                   y_axis_label="Orientation (°)",
+                   height=600,
+                   tools="pan,wheel_zoom,box_zoom,reset,save")
 
-        fig = go.Figure(data=bars)
+        p.rect(x='x', y='y', width='width', height='height', 
+               color='color', line_color=None, alpha=0.8, source=source)
 
-        fig.update_layout(
-            title="Pipe Defects (Faster Interactive View)",
-            xaxis_title="Defect Length (m)",
-            yaxis_title="Orientation (°)",
-            yaxis=dict(autorange='reversed', tickmode='linear', dtick=15),
-            height=600,
-            dragmode='pan'
-        )
+        p.y_range.flipped = True
 
-        st.plotly_chart(fig, use_container_width=True)
-
+        st.bokeh_chart(p, use_container_width=True)
 
     except Exception as e:
         st.error(f"Error reading or processing file: {e}")
