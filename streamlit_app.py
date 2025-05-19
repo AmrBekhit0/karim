@@ -14,7 +14,7 @@ uploaded_file = st.file_uploader("Choose Excel file", type="xlsx")
 
 if uploaded_file is not None:
     try:
-        df = pd.read_excel(uploaded_file, sheet_name="ALX-MOD", skiprows=6)
+        df = pd.read_excel(uploaded_file)
 
         # Extract columns
         df['Distance'] = pd.to_numeric(df.iloc[:, 3], errors='coerce')
