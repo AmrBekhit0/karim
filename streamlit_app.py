@@ -47,14 +47,6 @@ if uploaded_file is not None:
         pipe_circum = np.pi * pipe_diam_m
         df['Angle Span'] = (df['Width'] / pipe_circum) * 360
 
-        # Filter distance interactively
-        min_dist = float(df['Distance'].min())
-        max_dist = float(df['Distance'].max())
-        user_min_dist = st.slider("Minimum Distance", min_value=min_dist, max_value=max_dist, value=min_dist)
-        user_max_dist = st.slider("Maximum Distance", min_value=min_dist, max_value=max_dist, value=max_dist)
-        
-        df = df[(df['Distance'] >= user_min_dist) & (df['Distance'] <= user_max_dist)]
-
 
         # Color mapping
         def color_map(peak):
