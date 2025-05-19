@@ -1,5 +1,6 @@
 streamlit
-bokeh==2.4.3
+bokeh==3.7.3
+streamlit-bokeh
 pandas
 numpy
 matplotlib
