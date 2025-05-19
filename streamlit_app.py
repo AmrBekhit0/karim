@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
+import matplotlib.pyplot as plt
+
 
 st.title("Pipe Defects Visualization (Bokeh)")
 st.markdown("Upload an Excel file to visualize pipeline defects as colored rectangles with interaction.")
@@ -59,7 +61,6 @@ if uploaded_file is not None:
             else:
                 return plt.cm.Reds(min(peak, 1))
 
-        import matplotlib.pyplot as plt
         colors = [f"#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}" 
                   for r, g, b, _ in [color_map(p) for p in df['Peak']]]
 
