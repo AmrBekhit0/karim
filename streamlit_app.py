@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+import plotly.express as px
 
 
 st.title("Pipe Defects Visualization")
@@ -67,39 +68,41 @@ if uploaded_file is not None:
 
         # Plotting
         fig = go.Figure()
-        for _, row in df.iterrows():
-            x = row['Distance']
-            width = row['Length']
-            height = row['Angle Span']
-            y = row['Angle'] - height / 2
 
-            color = color_map(row['Peak'])
-            color_rgb = (int(color[0]*255), int(color[1]*255), int(color[2]*255))
-            color_hex = f"rgb({color_rgb[0]}, {color_rgb[1]}, {color_rgb[2]})"
+        # نحضّر بيانات الأعمدة (بار أفقي مائل يمثل المستطيلات)
+        df['y_start'] = df['Angle'] - df['Angle Span'] / 2
+        df['y_end'] = df['Angle'] + df['Angle Span'] / 2
 
-            fig.add_shape(
-                type="rect",
-                x0=x,
-                y0=y,
-                x1=x + width,
-                y1=y + height,
-                line=dict(width=0),
-                fillcolor=color_hex
-            )
+        # نستخدم scatter لإنشاء أشكال مستطيلية عبر rectangles
+        bars = go.Bar(
+            x=df['Length'],
+            y=df['Angle'],
+            orientation='h',
+            marker=dict(
+                color=[f"rgb({int(c[0]*255)},{int(c[1]*255)},{int(c[2]*255)})" for c in df['Peak'].apply(color_map)],
+                line=dict(width=0)
+            ),
+            width=df['Angle Span'],
+            hovertext=[
+                f"Distance: {d:.2f} m<br>Peak: {p:.2f}<br>Angle: {a:.1f}°"
+                for d, p, a in zip(df['Distance'], df['Peak'], df['Angle'])
+            ],
+            hoverinfo="text"
+        )
 
+        fig = go.Figure(data=bars)
 
         fig.update_layout(
-            title="Pipe Defects Interactive Visualization",
-            xaxis_title="Distance (m)",
-            yaxis_title="Orientation (degrees)",
-            yaxis=dict(autorange='reversed', tickmode='linear', tick0=0, dtick=15),
-            showlegend=False,
+            title="Pipe Defects (Faster Interactive View)",
+            xaxis_title="Defect Length (m)",
+            yaxis_title="Orientation (°)",
+            yaxis=dict(autorange='reversed', tickmode='linear', dtick=15),
             height=600,
             dragmode='pan'
         )
 
-
         st.plotly_chart(fig, use_container_width=True)
+
 
     except Exception as e:
         st.error(f"Error reading or processing file: {e}")
