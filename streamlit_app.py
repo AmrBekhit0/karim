@@ -3,8 +3,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.lines import Line2D
+import plotly.graph_objects as go
+
 
 st.title("Pipe Defects Visualization")
 st.markdown("Upload an Excel file to visualize pipeline defects as colored rectangles.")
@@ -13,7 +13,7 @@ try:
     uploaded_file = st.file_uploader("Choose Excel file", type="xlsx")
 except Exception as e:
     st.error(f"📛 حدث خطأ أثناء قراءة الملف: {e}")
-    
+
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file, engine="openpyxl")
@@ -50,8 +50,10 @@ if uploaded_file is not None:
         min_dist = float(df['Distance'].min())
         max_dist = float(df['Distance'].max())
         user_min_dist = st.slider("Minimum Distance", min_value=min_dist, max_value=max_dist, value=min_dist)
+        user_max_dist = st.slider("Maximum Distance", min_value=min_dist, max_value=max_dist, value=max_dist)
+        
+        df = df[(df['Distance'] >= user_min_dist) & (df['Distance'] <= user_max_dist)]
 
-        df = df[df['Distance'] >= user_min_dist]
 
         # Color mapping
         def color_map(peak):
@@ -62,36 +64,42 @@ if uploaded_file is not None:
             else:
                 return plt.cm.Reds(min(peak, 1))
 
+
         # Plotting
-        fig, ax = plt.subplots(figsize=(18, 8))
+        fig = go.Figure()
         for _, row in df.iterrows():
             x = row['Distance']
             width = row['Length']
             height = row['Angle Span']
             y = row['Angle'] - height / 2
+
             color = color_map(row['Peak'])
+            color_rgb = tuple((np.array(color[:3]) * 255).astype(int))
+            color_hex = f"rgb{color_rgb}"
 
-            rect = patches.Rectangle((x, y), width, height, facecolor=color, edgecolor=color, linewidth=1)
-            ax.add_patch(rect)
+            fig.add_shape(
+                type="rect",
+                x0=x,
+                y0=y,
+                x1=x + width,
+                y1=y + height,
+                line=dict(width=0),
+                fillcolor=color_hex
+            )
 
-        ax.set_xlabel('Absolute Distance (m)')
-        ax.set_ylabel('Pipe Orientation (degrees)')
-        ax.set_title('Pipe Defects Visualization by Rectangles')
-        ax.set_yticks(np.arange(0, 361, 15))
-        ax.invert_yaxis()
-        ax.grid(True, linestyle='--', linewidth=0.5)
-        ax.set_xlim(df['Distance'].min(), df['Distance'].max())
-        ax.set_ylim(360, 0)
 
-        # Legend
-        legend_lines = [
-            Line2D([0], [0], color=plt.cm.Blues(.7), lw=6),
-            Line2D([0], [0], color=plt.cm.Oranges(.7), lw=6),
-            Line2D([0], [0], color=plt.cm.Reds(.7), lw=6)
-        ]
-        ax.legend(legend_lines, ['< 0.3', '0.3–0.5', '> 0.5'], title='Peak Depth (normalized)')
+        fig.update_layout(
+            title="Pipe Defects Interactive Visualization",
+            xaxis_title="Distance (m)",
+            yaxis_title="Orientation (degrees)",
+            yaxis=dict(autorange='reversed', tickmode='linear', tick0=0, dtick=15),
+            showlegend=False,
+            height=600,
+            dragmode='pan'
+        )
 
-        st.pyplot(fig)
+
+        st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
         st.error(f"Error reading or processing file: {e}")
