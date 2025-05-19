@@ -1,9 +1,11 @@
+import numpy as np
 import streamlit as st
 import pandas as pd
-import numpy as np
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
 import matplotlib.pyplot as plt
+
+st.write("numpy version:", np.__version__)
 
 
 st.title("Pipe Defects Visualization (Bokeh)")
